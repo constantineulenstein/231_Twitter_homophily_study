@@ -141,7 +141,8 @@ if __name__ == "__main__":
             # Sample random tweets
             while True and not(twitter_streaming_client.is_maxed_out() or twitter_streaming_client.is_sunset()):
                 time.sleep(1)
-                twitter_streaming_client.sample()
+                twitter_streaming_client.sample(tweet_fields='created_at',
+                                                expansions=['author_id', 'referenced_tweets.id.author_id'])
     except KeyboardInterrupt:
         eprint()
     except AttributeError:
