@@ -12,8 +12,11 @@ from tweepy import Stream, Client, StreamingClient, StreamRule, Paginator
 
 MAX_TWEETS = 500000
 
+
 class CustomStreamingClient(StreamingClient):
     total_tweets = 0
+    tweets_sampled_this_round = 0
+    max_tweets_per_round = None
     sunset_time = datetime.datetime.now()
 
     def __init__(self, write=print, **kwds):
@@ -30,6 +33,12 @@ class CustomStreamingClient(StreamingClient):
     def on_tweet(self, tweet):
         self.write(tweet.data)
 
+    def reset_counter_tweets_sampled(self):
+        self.tweets_sampled_this_round = 0
+
+    def set_max_tweets_per_minute(self, max_tweets_per_round):
+        self.max_tweets_per_round = max_tweets_per_round
+
     def on_data(self, raw_data):
         """
         on_data handles what to do when the client streams a tweet (in bytes).
@@ -44,18 +53,33 @@ class CustomStreamingClient(StreamingClient):
         # You can modify the below code to e.g. manually the adjust the rate
         # at which you pull tweets, modify the cutoff, etc.
         if self.is_maxed_out():
-            eprint("Read " + str(self.total_tweets) + " tweets, terminating to avoid hitting 500k maximum")
+            eprint(
+                "Read "
+                + str(self.total_tweets)
+                + " tweets, terminating to avoid hitting 500k maximum"
+            )
             time.sleep(1)
             self.disconnect()
             return
+
+        if (
+            self.max_tweets_per_round is not None
+            and self.tweets_sampled_this_round > self.max_tweets_per_round
+        ):
+            self.disconnect()
 
         if self.is_sunset():
             eprint("Process has been reading tweets for 24 hours. Terminating")
             self.disconnect()
             return
-        time.sleep(0.75)
+
         self.write(raw_data)
         self.total_tweets += 1
+        self.tweets_sampled_this_round += 1
+        elapsed_time = (
+            datetime.datetime.now() - self.sunset_time + datetime.timedelta(hours=24)
+        )
+        # print(f"Pulled {self.total_tweets} tweets in {elapsed_time}")
 
     def on_error(self, status_code):
         eprint(status_code)
@@ -109,7 +133,9 @@ if __name__ == "__main__":
 
     # Track time and start streaming
     starttime = datetime.datetime.now()
-    twitter_streaming_client = CustomStreamingClient(write=output, bearer_token=creds["bearer_token"])
+    twitter_streaming_client = CustomStreamingClient(
+        write=output, bearer_token=creds["bearer_token"]
+    )
     twitter_client = Client(bearer_token=creds["bearer_token"])
 
     # Clear out old rules
@@ -124,25 +150,46 @@ if __name__ == "__main__":
         if flags.filter:
             query = " ".join(flags.filter) + " lang:en"
             # Get tweet counts for this query for the past week
-            counts = twitter_client.get_recent_tweets_count(query=query, granularity='day')
+            counts = twitter_client.get_recent_tweets_count(
+                query=query, granularity="day"
+            )
             eprint("Last 7 days of tweet counts for query: " + query)
             eprint("start_time | tweet_count")
             warning = False
             for count in counts.data:
-                eprint(count['start'], "|", count['tweet_count'])
-                warning = warning or count['tweet_count'] > 300000
+                eprint(count["start"], "|", count["tweet_count"])
+                warning = warning or count["tweet_count"] > 300000
             if warning:
-                eprint("WARNING: You might exceed the 500,000 tweet account limit with this query!")
+                eprint(
+                    "WARNING: You might exceed the 500,000 tweet account limit with this query!"
+                )
             time.sleep(1)
             # Track specific tweets
             twitter_streaming_client.add_rules(StreamRule(query))
-            twitter_streaming_client.filter(tweet_fields='created_at', expansions=['author_id', 'referenced_tweets.id.author_id'])
+            twitter_streaming_client.filter(
+                tweet_fields="created_at",
+                expansions=["author_id", "referenced_tweets.id.author_id"],
+            )
         else:
             # Sample random tweets
-            while True and not(twitter_streaming_client.is_maxed_out() or twitter_streaming_client.is_sunset()):
-                time.sleep(1)
-                twitter_streaming_client.sample(tweet_fields='created_at',
-                                                expansions=['author_id', 'referenced_tweets.id.author_id'])
+            twitter_streaming_client.set_max_tweets_per_minute(120)
+            for k in range(24 * 60):
+                first_t = datetime.datetime.now()
+                print(f"Printing tweets for the {k}th minute")
+                twitter_streaming_client.sample(
+                    tweet_fields="created_at",
+                    expansions=["author_id", "referenced_tweets.id.author_id"],
+                )
+                twitter_streaming_client.reset_counter_tweets_sampled()
+                last_t = datetime.datetime.now()
+                time_to_sleep_until_next_minute = (
+                    datetime.timedelta(minutes=1) - (last_t - first_t)
+                ).total_seconds()
+                print(
+                    f"Sleeping {time_to_sleep_until_next_minute} seconds until next minute to sample"
+                )
+                if time_to_sleep_until_next_minute > 0:
+                    time.sleep(time_to_sleep_until_next_minute)
     except KeyboardInterrupt:
         eprint()
     except AttributeError:
@@ -154,4 +201,3 @@ if __name__ == "__main__":
         f.close()
 
     eprint("total run time", datetime.datetime.now() - starttime)
-
