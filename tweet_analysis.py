@@ -3,13 +3,15 @@ import matplotlib.pyplot as plt
 from collections import Counter
 import numpy as np
 import pandas as pd
+import json
 
-
+file_name = "twitter_data_corruption"
 # Read list to memory
 def read_list(name):
-    with open(name, 'rb') as fp:
-        n_list = pickle.load(fp)
-        return n_list
+    with open(name, 'r') as f:
+        tweets = list(map(json.loads, f))
+    return tweets
+
 
 
 def create_gender_dict():
@@ -32,6 +34,7 @@ def create_gender_dict():
 
 def plot_tweet_dist(male, female, topic="Tweet numbers"):
     labels = list(male.keys())
+
     x = np.arange(len(labels))  # the label locations
     width = 0.35  # the width of the bars
 
@@ -50,7 +53,7 @@ def plot_tweet_dist(male, female, topic="Tweet numbers"):
     plt.show()
 
 
-tweets = read_list("twitter_data_test")
+tweets = read_list(file_name)
 
 
 
