@@ -38,7 +38,7 @@ def plot_tweet_dist(male, female, topic="Tweet numbers"):
     x = np.arange(len(labels))  # the label locations
     width = 0.35  # the width of the bars
 
-    plt.rcParams.update({'font.size': 8})
+    plt.rcParams.update({'font.size': 16})
     fig, ax = plt.subplots(figsize=(16, 10))
 
     ax.bar(x - width / 2, list(male.values()), width, label='Men')
@@ -48,7 +48,14 @@ def plot_tweet_dist(male, female, topic="Tweet numbers"):
     ax.set_xticks(x, labels)
     ax.legend()
 
-    # fig.tight_layout()
+    for i, label in enumerate(ax.xaxis.get_ticklabels()):
+        if i % 4 == 0:
+            label.set_visible(True)
+        else:
+            label.set_visible(False)
+
+
+    #fig.tight_layout()
     plt.xticks(rotation=90)
     plt.show()
 
