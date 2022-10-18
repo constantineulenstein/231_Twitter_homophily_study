@@ -44,7 +44,7 @@ def plot_tweet_dist(male, female, topic="Tweet numbers"):
     ax.bar(x - width / 2, list(male.values()), width, label='Men')
     ax.bar(x + width / 2, list(female.values()), width, label='Women')
     ax.set_ylabel(topic)
-    ax.set_title(f'{topic} by time and gender')
+    ax.set_title(f'{topic} by time (UCT) and gender')
     ax.set_xticks(x, labels)
     ax.legend()
 
