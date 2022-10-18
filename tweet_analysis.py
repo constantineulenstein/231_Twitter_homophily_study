@@ -1,4 +1,3 @@
-import pickle
 import matplotlib.pyplot as plt
 from collections import Counter
 import numpy as np
@@ -6,12 +5,13 @@ import pandas as pd
 import json
 
 file_name = "twitter_data_corruption"
+
+
 # Read list to memory
 def read_list(name):
     with open(name, 'r') as f:
         tweets = list(map(json.loads, f))
     return tweets
-
 
 
 def create_gender_dict():
@@ -53,9 +53,18 @@ def plot_tweet_dist(male, female, topic="Tweet numbers"):
     plt.show()
 
 
+def compute_weighted_average_homopholy(volume_male, volume_female, ratio_male, ratio_female):
+    total_tweets_men = sum(volume_male.values())
+    total_tweets_woman = sum(volume_female.values())
+    wgt_avg_hom_men = 0
+    wgt_avg_hom_women = 0
+    for key in volume_male:
+        wgt_avg_hom_men += volume_male[key] * ratio_male[key]
+        wgt_avg_hom_women += volume_female[key] * ratio_female[key]
+    return wgt_avg_hom_men/total_tweets_men, wgt_avg_hom_women/total_tweets_woman
+
+
 tweets = read_list(file_name)
-
-
 
 print(f"There are {len(tweets)} tweets with Corruption in total!")
 
@@ -108,7 +117,10 @@ male_retweet_ratio = {key: male_retweet_counts[key] / male_counts[key] for key i
 female_retweet_ratio = {key: female_retweet_counts[key] / female_counts[key] for key in female_counts}
 plot_tweet_dist(male_retweet_ratio, female_retweet_ratio, "Homophily ratios")
 
+wgt_avg_men, wgt_avg_women = compute_weighted_average_homopholy(male_counts, female_counts, male_retweet_ratio, female_retweet_ratio)
 
-female_tweets_nine_thirty = [tweet["text"] for tweet in tweets_with_gender_and_retweet if
-                               tweet["gender"] == "F" and tweet["retweet_gender"] == "F" and tweet["time"] == "21:30"]
-print(np.unique(female_tweets_nine_thirty, return_counts=True))
+print(f"The weighted average homophily ratio for men is {wgt_avg_men} and for women is {wgt_avg_women}")
+
+#female_tweets_nine_thirty = [tweet["text"] for tweet in tweets_with_gender_and_retweet if
+#                             tweet["gender"] == "F" and tweet["retweet_gender"] == "F" and tweet["time"] == "21:30"]
+#print(np.unique(female_tweets_nine_thirty, return_counts=True))
