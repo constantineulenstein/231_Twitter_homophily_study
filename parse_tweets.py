@@ -2,7 +2,6 @@ import json
 import sys
 import pickle
 
-file_name = "twitter_data_corruption"
 
 def round_to_nearest_15_interval(time_string):
     minutes = 15 * ((int(time_string[-2:]) + 7) // 15)
@@ -20,7 +19,6 @@ def round_to_nearest_15_interval(time_string):
         return time_string[:3] + str(minutes)
 
 
-output_file = open(file_name, 'w', encoding='utf-8')
 for line in sys.stdin:
     tweet = json.loads(line)
     tweet_dict = {"date": tweet["data"]["created_at"][:10],
@@ -34,7 +32,4 @@ for line in sys.stdin:
     except:
         tweet_dict["retweet"] = "NA"
 
-    json.dump(tweet_dict, output_file)
-    output_file.write("\n")
-output_file.close()
-print('Done writing list into a binary file')
+    print(json.dumps(tweet_dict)) # This puts the result in sys.stdout straight

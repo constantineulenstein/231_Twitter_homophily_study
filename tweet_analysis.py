@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import json
 
-file_name = "twitter_data_corruption"
+file_name = "twitter_data_unfiltered"
 
 
 # Read list to memory
@@ -58,6 +58,7 @@ def plot_tweet_dist(male, female, topic="Tweet numbers"):
     #fig.tight_layout()
     plt.xticks(rotation=90)
     plt.show()
+    plt.savefig(topic)
 
 
 def compute_weighted_average_homopholy(volume_male, volume_female, ratio_male, ratio_female):
@@ -73,16 +74,17 @@ def compute_weighted_average_homopholy(volume_male, volume_female, ratio_male, r
 
 tweets = read_list(file_name)
 
-print(f"There are {len(tweets)} tweets with Corruption in total!")
+print(f"There are {len(tweets)} tweets in total!")
 
 name_allocation = create_gender_dict()
 
 tweets_with_gender = []
 for tweet in tweets:
-    name = tweet["name"].split(" ")[0]
-    if name in name_allocation:
-        tweet["gender"] = name_allocation[name]
-        tweets_with_gender.append(tweet)
+    for name in tweet["name"].split(" "):
+        if name in name_allocation:
+            tweet["gender"] = name_allocation[name]
+            tweets_with_gender.append(tweet)
+            continue
 
 male_tweets = [tweet["time"] for tweet in tweets_with_gender if tweet["gender"] == "M"]
 female_tweets = [tweet["time"] for tweet in tweets_with_gender if tweet["gender"] == "F"]
