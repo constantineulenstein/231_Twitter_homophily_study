@@ -3,9 +3,6 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 
-file_name = "tweets_unfiltered.txt"
-
-
 # Read list to memory
 def read_list(file_name):
     with open(file_name, "r") as f:
@@ -89,96 +86,101 @@ def compute_weighted_average_homopholy(
     return wgt_avg_hom_men / total_tweets_men, wgt_avg_hom_women / total_tweets_woman
 
 
-tweets = read_list(file_name)
+def analyze_parsed_tweets_file(file_name, suffix):
+    print("\nAnalysis for the data " + suffix + "\n\n")
 
-print(f"There are {len(tweets)} tweets in total!")
+    tweets = read_list(file_name)
 
-name_allocation = create_gender_dict()
+    print(f"There are {len(tweets)} tweets in total!")
 
-tweets_with_gender = []
-for tweet in tweets:
-    name = tweet["name"].split(" ")[0]
-    if name in name_allocation:
-        tweet["gender"] = name_allocation[name]
-        tweets_with_gender.append(tweet)
+    name_allocation = create_gender_dict()
 
-# Other way of attributing gender ?
-# tweets_with_gender = []
-# for tweet in tweets:
-#     for name in tweet["name"].split(" "):
-#         if name in name_allocation:
-#             tweet["gender"] = name_allocation[name]
-#             tweets_with_gender.append(tweet)
-#             continue
+    tweets_with_gender = []
+    for tweet in tweets:
+        name = tweet["name"].split(" ")[0]
+        if name in name_allocation:
+            tweet["gender"] = name_allocation[name]
+            tweets_with_gender.append(tweet)
 
-male_tweets = [tweet["time"] for tweet in tweets_with_gender if tweet["gender"] == "M"]
-female_tweets = [
-    tweet["time"] for tweet in tweets_with_gender if tweet["gender"] == "F"
-]
-print(
-    f"There are {len(tweets_with_gender)} tweets that a gender could be assigned,{len(male_tweets)} of which are "
-    f"men and {len(female_tweets)} of which are women."
-)
+    male_tweets = [
+        tweet["time"] for tweet in tweets_with_gender if tweet["gender"] == "M"
+    ]
+    female_tweets = [
+        tweet["time"] for tweet in tweets_with_gender if tweet["gender"] == "F"
+    ]
+    print(
+        f"There are {len(tweets_with_gender)} tweets that a gender could be assigned,{len(male_tweets)} of which are "
+        f"men and {len(female_tweets)} of which are women."
+    )
 
-retweeted_tweets = [tweet for tweet in tweets_with_gender if tweet["retweet"] != "NA"]
+    retweeted_tweets = [
+        tweet for tweet in tweets_with_gender if tweet["retweet"] != "NA"
+    ]
 
-tweets_with_gender_and_retweet = []
-for tweet in retweeted_tweets:
-    retweet_name = tweet["retweet"].split(" ")[0]
-    if retweet_name in name_allocation:
-        tweet["retweet_gender"] = name_allocation[retweet_name]
-        tweets_with_gender_and_retweet.append(tweet)
+    tweets_with_gender_and_retweet = []
+    for tweet in retweeted_tweets:
+        retweet_name = tweet["retweet"].split(" ")[0]
+        if retweet_name in name_allocation:
+            tweet["retweet_gender"] = name_allocation[retweet_name]
+            tweets_with_gender_and_retweet.append(tweet)
 
-male_tweets = [
-    tweet["time"] for tweet in tweets_with_gender_and_retweet if tweet["gender"] == "M"
-]
-female_tweets = [
-    tweet["time"] for tweet in tweets_with_gender_and_retweet if tweet["gender"] == "F"
-]
-print(
-    f"There are {len(tweets_with_gender_and_retweet)} tweets that have a retweet and a gender could be assigned to "
-    f"both the OG and tweet, {len(male_tweets)} of which are men and {len(female_tweets)} of which are women."
-)
+    male_tweets = [
+        tweet["time"]
+        for tweet in tweets_with_gender_and_retweet
+        if tweet["gender"] == "M"
+    ]
+    female_tweets = [
+        tweet["time"]
+        for tweet in tweets_with_gender_and_retweet
+        if tweet["gender"] == "F"
+    ]
+    print(
+        f"There are {len(tweets_with_gender_and_retweet)} tweets that have a retweet and a gender could be assigned to "
+        f"both the OG and tweet, {len(male_tweets)} of which are men and {len(female_tweets)} of which are women."
+    )
 
-male_counts = Counter(male_tweets)
-female_counts = Counter(female_tweets)
-male_counts = dict(sorted(male_counts.items()))
-female_counts = dict(sorted(female_counts.items()))
+    male_counts = Counter(male_tweets)
+    female_counts = Counter(female_tweets)
+    male_counts = dict(sorted(male_counts.items()))
+    female_counts = dict(sorted(female_counts.items()))
 
-plot_tweet_dist(male_counts, female_counts, "Tweet numbers")
+    plot_tweet_dist(male_counts, female_counts, "Tweet numbers " + suffix)
 
-male_tweets_with_retweets = [
-    tweet["time"]
-    for tweet in tweets_with_gender_and_retweet
-    if tweet["gender"] == "M" and tweet["retweet_gender"] == "M"
-]
-female_tweets_with_retweets = [
-    tweet["time"]
-    for tweet in tweets_with_gender_and_retweet
-    if tweet["gender"] == "F" and tweet["retweet_gender"] == "F"
-]
+    male_tweets_with_retweets = [
+        tweet["time"]
+        for tweet in tweets_with_gender_and_retweet
+        if tweet["gender"] == "M" and tweet["retweet_gender"] == "M"
+    ]
+    female_tweets_with_retweets = [
+        tweet["time"]
+        for tweet in tweets_with_gender_and_retweet
+        if tweet["gender"] == "F" and tweet["retweet_gender"] == "F"
+    ]
 
-male_retweet_counts = Counter(male_tweets_with_retweets)
-female_retweet_counts = Counter(female_tweets_with_retweets)
-male_retweet_counts = dict(sorted(male_retweet_counts.items()))
-female_retweet_counts = dict(sorted(female_retweet_counts.items()))
+    male_retweet_counts = Counter(male_tweets_with_retweets)
+    female_retweet_counts = Counter(female_tweets_with_retweets)
+    male_retweet_counts = dict(sorted(male_retweet_counts.items()))
+    female_retweet_counts = dict(sorted(female_retweet_counts.items()))
 
-male_retweet_ratio = {
-    key: male_retweet_counts[key] / male_counts[key] for key in male_counts
-}
-female_retweet_ratio = {
-    key: female_retweet_counts[key] / female_counts[key] for key in female_counts
-}
-plot_tweet_dist(male_retweet_ratio, female_retweet_ratio, "Homophily ratios")
+    male_retweet_ratio = {
+        key: male_retweet_counts[key] / male_counts[key] for key in male_counts
+    }
+    female_retweet_ratio = {
+        key: female_retweet_counts[key] / female_counts[key] for key in female_counts
+    }
+    plot_tweet_dist(
+        male_retweet_ratio, female_retweet_ratio, "Homophily ratios " + suffix
+    )
 
-wgt_avg_men, wgt_avg_women = compute_weighted_average_homopholy(
-    male_counts, female_counts, male_retweet_ratio, female_retweet_ratio
-)
+    wgt_avg_men, wgt_avg_women = compute_weighted_average_homopholy(
+        male_counts, female_counts, male_retweet_ratio, female_retweet_ratio
+    )
 
-print(
-    f"The weighted average homophily ratio for men is {wgt_avg_men} and for women is {wgt_avg_women}"
-)
+    print(
+        f"The weighted average homophily ratio for men is {wgt_avg_men} and for women is {wgt_avg_women}"
+    )
 
-# female_tweets_nine_thirty = [tweet["text"] for tweet in tweets_with_gender_and_retweet if
-#                             tweet["gender"] == "F" and tweet["retweet_gender"] == "F" and tweet["time"] == "21:30"]
-# print(np.unique(female_tweets_nine_thirty, return_counts=True))
+
+if __name__ == "__main__":
+    analyze_parsed_tweets_file("tweets_unfiltered.txt", "Unfiltered")
+    analyze_parsed_tweets_file("tweets_corruption.txt", "Corruption")
