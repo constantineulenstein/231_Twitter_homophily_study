@@ -21,15 +21,20 @@ def round_to_nearest_15_interval(time_string):
 
 for line in sys.stdin:
     tweet = json.loads(line)
-    tweet_dict = {"date": tweet["data"]["created_at"][:10],
-                  "time": round_to_nearest_15_interval(tweet["data"]["created_at"][11:16]),
-                  "name": tweet["includes"]["users"][0]["name"],
-                  "text": tweet["data"]["text"]}
-
+    
+    date = tweet["data"]["created_at"][:10]
+    time = round_to_nearest_15_interval(tweet["data"]["created_at"][11:16])
+    name = tweet["includes"]["users"][0]["name"]
+    
     try:
-        tweet_dict["retweet"] = tweet["includes"]["users"][1]["name"] if tweet['data']['referenced_tweets'][0][
-                                                                             "type"] == "retweeted" else "NA"
+        retweet = (
+            tweet["includes"]["users"][1]["name"]
+            if tweet["data"]["referenced_tweets"][0]["type"] == "retweeted"
+            else "NA"
+        )
     except:
-        tweet_dict["retweet"] = "NA"
+        retweet = "NA"
 
-    print(json.dumps(tweet_dict)) # This puts the result in sys.stdout straight
+    print(
+        f"{date}\t{time}\t{name}\t{retweet}"
+    )  # This puts the result in sys.stdout straight
